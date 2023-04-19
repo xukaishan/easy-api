@@ -15,59 +15,59 @@ function streamType(config) {
 }
 
 // 请求拦截器
-instance.interceptors.request.use(
-    config => {
-        if (!config.headers) {
-            config.headers = defaultOpts.headers;
-        }
-        const systemStore = useSystemStore();
-        config.headers['qz-token'] = systemStore.userInfo.qzToken;
-        config.headers['language'] = unref(Locale.currentLang);
-        if (window.qzSystemConfig && window.qzSystemConfig.apiBaseUrl) {
-            config.baseURL = window.qzSystemConfig.apiBaseUrl;
-        }
-        return config;
-    },
-    error => {
-        return Promise.error(error);
-    },
-);
+// instance.interceptors.request.use(
+//     config => {
+//         if (!config.headers) {
+//             config.headers = defaultOpts.headers;
+//         }
+//         const systemStore = useSystemStore();
+//         config.headers['qz-token'] = systemStore.userInfo.qzToken;
+//         config.headers['language'] = unref(Locale.currentLang);
+//         if (window.qzSystemConfig && window.qzSystemConfig.apiBaseUrl) {
+//             config.baseURL = window.qzSystemConfig.apiBaseUrl;
+//         }
+//         return config;
+//     },
+//     error => {
+//         return Promise.error(error);
+//     },
+// );
 
-// 响应拦截器
-instance.interceptors.response.use(
-    response => {
-        if (response.status === 200 || response.status === 304) {
-            console.log('response=>', response);
-            if (response.data.code === '403002') {
-                const systemStore = useSystemStore();
-                if (!lock.lockTips) {
-                    lock.lockTips = true;
-                    ElMessageBox.confirm(
-                        response.data.msg || '登录失效，请重新登录！',
-                        '提示',
-                        {
-                            confirmButtonText: '确认',
-                            type: 'warning',
-                        },
-                    ).then(action => {
-                        systemStore.loginOut().then(_ => {
-                            lock.lockTips = false;
-                        });
-                    }).catch(_ => { });
-                }
-            }
+// // 响应拦截器
+// instance.interceptors.response.use(
+//     response => {
+//         if (response.status === 200 || response.status === 304) {
+//             console.log('response=>', response);
+//             if (response.data.code === '403002') {
+//                 const systemStore = useSystemStore();
+//                 if (!lock.lockTips) {
+//                     lock.lockTips = true;
+//                     ElMessageBox.confirm(
+//                         response.data.msg || '登录失效，请重新登录！',
+//                         '提示',
+//                         {
+//                             confirmButtonText: '确认',
+//                             type: 'warning',
+//                         },
+//                     ).then(action => {
+//                         systemStore.loginOut().then(_ => {
+//                             lock.lockTips = false;
+//                         });
+//                     }).catch(_ => { });
+//                 }
+//             }
 
-            return Promise.resolve(response);
-        } else {
-            return Promise.reject(response);
-        }
-    },
-    // 服务器状态码不是200的情况
-    error => {
-        const response = { status: -404, statusText: '本地网络错误' };
-        return Promise.reject(error.response || response);
-    },
-);
+//             return Promise.resolve(response);
+//         } else {
+//             return Promise.reject(response);
+//         }
+//     },
+//     // 服务器状态码不是200的情况
+//     error => {
+//         const response = { status: -404, statusText: '本地网络错误' };
+//         return Promise.reject(error.response || response);
+//     },
+// );
 
 /**
  * 响应format
@@ -106,15 +106,14 @@ function responseCodeFormat(code) {
     return code;
 }
 
-export async function get(url, params, options = {}) {
+export async function get({ url, data, options = {} }, { instance }) {
     const send = {
         timeout: options.timeout || instance.defaults.timeout,
         method: 'get',
         url,
-        params,
+        params: data,
         headers: options.headers,
         CancelToken: new Axios.CancelToken(function executor(c) {
-            // executor 函数接收一个 cancel 函数作为参数
             typeof options.setCancel === 'function' && options.setCancel(c);
         }),
         responseType: options.responseType || 'json',
@@ -126,7 +125,7 @@ export async function get(url, params, options = {}) {
     );
 }
 
-export async function post(url, data, options = {}) {
+export async function post({ url, data, options = {} }, { instance }) {
     const send = {
         timeout: options.timeout || instance.defaults.timeout,
         method: 'post',
@@ -134,7 +133,6 @@ export async function post(url, data, options = {}) {
         data,
         headers: options.headers,
         CancelToken: new Axios.CancelToken(function executor(c) {
-            // executor 函数接收一个 cancel 函数作为参数
             typeof options.setCancel === 'function' && options.setCancel(c);
         }),
         responseType: options.responseType || 'json',
@@ -146,14 +144,13 @@ export async function post(url, data, options = {}) {
     );
 }
 
-export async function upload(url, formData, options = {}) {
+export async function upload({ url, data, options = {} }, { instance }) {
     const send = {
         timeout: options.timeout || 30000,
         method: 'post',
         url,
-        data: formData,
+        data,
         headers: Object.assign({}, options.headers, { 'Content-Type': 'multipart/form-data' }),
-        // `onUploadProgress` 允许为上传处理进度事件
         onUploadProgress: function (progressEvent) {
             typeof options.onUploadProgress === 'function' && options.onUploadProgress(progressEvent);
         },
@@ -169,7 +166,7 @@ export async function upload(url, formData, options = {}) {
 }
 
 
-function createGet(params) {
+function createGet(params, instance) {
     let cancel = null;
 
     const fetch = (payload, custom) => {
@@ -180,7 +177,7 @@ function createGet(params) {
         options.setCancel = options.setCancel ?? ((c) => {
             cancel = c
         });
-        return get(url, data, options);
+        return get({ url, data, options }, { instance });
     }
 
     fetch.cancel = cancel;
@@ -188,7 +185,7 @@ function createGet(params) {
     return fetch;
 }
 
-function createUpload(params) {
+function createUpload(params, instance) {
     let cancel = null;
 
     const fetch = (payload, custom) => {
@@ -199,7 +196,7 @@ function createUpload(params) {
         options.setCancel = options.setCancel ?? ((c) => {
             cancel = c
         });
-        return upload(url, data, options);
+        return upload({ url, data, options }, { instance });
     }
 
     fetch.cancel = cancel;
@@ -207,8 +204,10 @@ function createUpload(params) {
     return fetch;
 }
 
-function createPost(params) {
+function createPost(params, instance) {
     let cancel = null;
+    const { url, data, options } = params;
+
     const contentType = options.headers && options.headers['Content-Type'] || instance.defaults.headers['Content-Type'];
     if (data && /urlencoded/.test(contentType)) {
         data = qs.stringify(data);
@@ -218,11 +217,10 @@ function createPost(params) {
         if (custom) {
             Object.assign(params, { ...custom }, { data: payload })
         }
-        const { url, data, options } = params;
         options.setCancel = options.setCancel ?? ((c) => {
             cancel = c
         });
-        return post(url, data, options);
+        return post({ url, data, options }, { instance });
     }
 
     fetch.cancel = cancel;
@@ -230,11 +228,14 @@ function createPost(params) {
     return fetch;
 }
 
+export function createInstance(config = defaultOpts) {
+    return instance || (instance = Axios.create(config))
+}
 
-export function createRequest(options = {}, { baseUrl = '' } = {}) {
+export function createRequest(options = {}, { baseUrl = '', instance } = {}) {
     const apis = {}
     const isRequestType = (method, type) => `${method}`.toUpperCase() === type;
-    instance = instance || (instance = Axios.create(defaultOpts));
+    instance = instance || createInstance();
 
     for (const [key, val] of Object.entries(options)) {
         const url = (!/^http/.test(val.url) && !/^ws/.test(val.url)) ? baseUrl + val.url : val.url;
@@ -243,15 +244,15 @@ export function createRequest(options = {}, { baseUrl = '' } = {}) {
             options: val.options || { headers: instance.defaults.headers },
         };
         if (isRequestType(val.method, 'GET')) {
-            apis[key] = createGet(params);
+            apis[key] = createGet(params, instance);
             continue
         }
         if (isRequestType(val.method, 'POST')) {
-            apis[key] = createPost(params);
+            apis[key] = createPost(params, instance);
             continue
         }
         if (isRequestType(val.method, 'UPLOAD')) {
-            apis[key] = createUpload(params);
+            apis[key] = createUpload(params, instance);
             continue
         }
     }
