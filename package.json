@@ -2,8 +2,16 @@
   "name": "easy-api",
   "version": "1.0.0",
   "type": "module",
+  "files": ["dist"],
+  "main": "./dist/easy-api.umd.cjs",
+  "module": "./dist/easy-api.js",
+  "exports": {
+    ".": {
+      "import": "./dist/easy-api.js",
+      "require": "./dist/easy-api.umd.cjs"
+    }
+},
   "description": "Wrapper for Axios that allows to easily requests",
-  "main": "index.js",
   "scripts": {
     "dev": "vite --config ./build/dev.js --open --host",
     "build": "vite build --config ./build/build.js"

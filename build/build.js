@@ -7,7 +7,6 @@ export default defineConfig({
         lib: {
             entry: resolve(__dirname, '../packages/index.js'),
             name: 'easyapi',
-            fileName: (format) => `easyapi.${format}.js`,
         },
         rollupOptions: {
             external: ['axios', 'qs'],
