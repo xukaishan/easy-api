@@ -1,33 +1,17 @@
 import Axios from './lib/axios';
 import qs from 'qs';
 
-const defaultOpts = {
-    timeout: 30000,
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-};
-
-export let instance = null;
-
-
-function streamType(config) {
-    return ['blob', 'arraybuffer'].includes(config.responseType);
-}
-
 /**
  * 响应format
  * @param response
  * @param format
  * @returns
  */
-function responseFormat(response, format = false) {
+ function responseFormat(response, format = false) {
     // 如果http状态码正常，则直接返回数据
     if (response && (response.status === 200 || response.status === 304)) {
-        if (format && (response.data.errcode || response.data.code)) {
-            return {
-                errcode: response.data.errcode || responseCodeFormat(response.data.code),
-                errmsg: response.data.errmsg || response.data.msg,
-                data: response.data.data,
-            };
+        if (format) {
+            return response.data
         } else {
             if (streamType(response.config)) { // 流类型直接返回
                 return response;
@@ -45,9 +29,22 @@ function responseFormat(response, format = false) {
     };
 }
 
-function responseCodeFormat(code) {
-    // 代表成功的code todo
-    return code;
+const defaultOpts = {
+    timeout: 30000,
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+    responseFormat,
+};
+
+
+export let instance = null;
+
+export function defineConfig(config) {
+    Object.assign(defaultOpts, config)
+}
+
+
+function streamType(config) {
+    return ['blob', 'arraybuffer', 'stream'].includes(config.responseType);
 }
 
 export async function get({ url, data, options = {} }, { instance }) {
@@ -62,7 +59,7 @@ export async function get({ url, data, options = {} }, { instance }) {
     };
     return instance(send).then(
         (response) => {
-            return responseFormat(response, true);
+            return defaultOpts.responseFormat(response, true);
         },
     );
 }
@@ -82,7 +79,7 @@ export async function post({ url, data, options = {} }, { instance }) {
     };
     return instance(send).then(
         (response) => {
-            return responseFormat(response, true);
+            return defaultOpts.responseFormat(response, true);
         },
     );
 }
@@ -104,7 +101,7 @@ export async function upload({ url, data, options = {} }, { instance }) {
     };
     return instance(send).then(
         (response) => {
-            return responseFormat(response);
+            return defaultOpts.responseFormat(response);
         },
     );
 }

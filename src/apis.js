@@ -12,7 +12,7 @@ const apis = createApis({
         method: 'post',
         options: {
             headers: { 'Content-Type': 'application/json' },
-            timeout: 8000 // 单独timeout; 未设置会采用默认配置的10000
+            timeout: 8000 // 单独timeout; 未设置会采用默认配置的30000
         }
     },
     saveForm: {
