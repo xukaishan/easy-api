@@ -1,9 +1,8 @@
-// import Axios from './lib/axios';
-import Axios from 'axios';
+import Axios from './lib/axios';
 import qs from 'qs';
 
 const defaultOpts = {
-    timeout: 10000,
+    timeout: 30000,
     headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
 };
 
@@ -13,61 +12,6 @@ export let instance = null;
 function streamType(config) {
     return ['blob', 'arraybuffer'].includes(config.responseType);
 }
-
-// 请求拦截器
-// instance.interceptors.request.use(
-//     config => {
-//         if (!config.headers) {
-//             config.headers = defaultOpts.headers;
-//         }
-//         const systemStore = useSystemStore();
-//         config.headers['qz-token'] = systemStore.userInfo.qzToken;
-//         config.headers['language'] = unref(Locale.currentLang);
-//         if (window.qzSystemConfig && window.qzSystemConfig.apiBaseUrl) {
-//             config.baseURL = window.qzSystemConfig.apiBaseUrl;
-//         }
-//         return config;
-//     },
-//     error => {
-//         return Promise.error(error);
-//     },
-// );
-
-// // 响应拦截器
-// instance.interceptors.response.use(
-//     response => {
-//         if (response.status === 200 || response.status === 304) {
-//             console.log('response=>', response);
-//             if (response.data.code === '403002') {
-//                 const systemStore = useSystemStore();
-//                 if (!lock.lockTips) {
-//                     lock.lockTips = true;
-//                     ElMessageBox.confirm(
-//                         response.data.msg || '登录失效，请重新登录！',
-//                         '提示',
-//                         {
-//                             confirmButtonText: '确认',
-//                             type: 'warning',
-//                         },
-//                     ).then(action => {
-//                         systemStore.loginOut().then(_ => {
-//                             lock.lockTips = false;
-//                         });
-//                     }).catch(_ => { });
-//                 }
-//             }
-
-//             return Promise.resolve(response);
-//         } else {
-//             return Promise.reject(response);
-//         }
-//     },
-//     // 服务器状态码不是200的情况
-//     error => {
-//         const response = { status: -404, statusText: '本地网络错误' };
-//         return Promise.reject(error.response || response);
-//     },
-// );
 
 /**
  * 响应format
@@ -108,14 +52,12 @@ function responseCodeFormat(code) {
 
 export async function get({ url, data, options = {} }, { instance }) {
     const send = {
-        timeout: options.timeout || instance.defaults.timeout,
+        timeout: options.timeout ?? instance.defaults.timeout,
         method: 'get',
         url,
         params: data,
-        headers: options.headers,
-        CancelToken: new Axios.CancelToken(function executor(c) {
-            typeof options.setCancel === 'function' && options.setCancel(c);
-        }),
+        headers: options.headers ?? instance.defaults.headers,
+        signal: options.signal,
         responseType: options.responseType || 'json',
     };
     return instance(send).then(
@@ -126,15 +68,16 @@ export async function get({ url, data, options = {} }, { instance }) {
 }
 
 export async function post({ url, data, options = {} }, { instance }) {
+    if (data && /urlencoded/.test(options.headers['Content-Type'])) {
+        data = qs.stringify(data);
+    }
     const send = {
-        timeout: options.timeout || instance.defaults.timeout,
+        timeout: options.timeout ?? instance.defaults.timeout,
         method: 'post',
         url,
         data,
-        headers: options.headers,
-        CancelToken: new Axios.CancelToken(function executor(c) {
-            typeof options.setCancel === 'function' && options.setCancel(c);
-        }),
+        headers: options.headers ?? instance.defaults.headers,
+        signal: options.signal,
         responseType: options.responseType || 'json',
     };
     return instance(send).then(
@@ -146,17 +89,18 @@ export async function post({ url, data, options = {} }, { instance }) {
 
 export async function upload({ url, data, options = {} }, { instance }) {
     const send = {
-        timeout: options.timeout || 30000,
+        timeout: options.timeout ?? instance.defaults.timeout,
         method: 'post',
         url,
         data,
-        headers: Object.assign({}, options.headers, { 'Content-Type': 'multipart/form-data' }),
+        headers: Object.assign({}, options.headers ?? {}, { 'Content-Type': 'multipart/form-data' }),
         onUploadProgress: function (progressEvent) {
             typeof options.onUploadProgress === 'function' && options.onUploadProgress(progressEvent);
         },
-        CancelToken: new Axios.CancelToken(function executor(c) {
-            typeof options.setCancel === 'function' && options.setCancel(c);
-        }),
+        onDownloadProgress: function (progressEvent) {
+            typeof options.onUploadProgress === 'function' && options.onUploadProgress(progressEvent);
+        },
+        signal: options.signal,
     };
     return instance(send).then(
         (response) => {
@@ -165,97 +109,63 @@ export async function upload({ url, data, options = {} }, { instance }) {
     );
 }
 
+const methodMap = {
+    'get': get,
+    'post': post,
+    'upload': upload,
+} 
 
-function createGet(params, instance) {
-    let cancel = null;
+export function createRequest(params) {
+    const cancelList = []
+    instance = instance || createInstance();
 
-    const fetch = (payload, custom) => {
+    const request = (payload, custom) => {
         if (custom) {
-            Object.assign(params, { ...custom }, { data: payload })
+            const { url = params.url, method = params.method, options = params.options } = custom
+            Object.assign(params.options, options)
+            Object.assign(params, { url, method }, { data: payload });
+        } else {
+            Object.assign(params, { data: payload });
         }
-        const { url, data, options } = params
-        options.setCancel = options.setCancel ?? ((c) => {
-            cancel = c
-        });
-        return get({ url, data, options }, { instance });
+
+        const controller = new AbortController();
+        params.options.signal = controller.signal;
+
+        cancelList.push(() => controller.abort())
+
+        return methodMap[`${params.method}`.toLowerCase()]({ url: params.url, data: params.data, options: params.options }, { instance });
     }
-
-    fetch.cancel = cancel;
-
-    return fetch;
-}
-
-function createUpload(params, instance) {
-    let cancel = null;
-
-    const fetch = (payload, custom) => {
-        if (custom) {
-            Object.assign(params, { ...custom }, { data: payload })
+    request.cancel = (i) => cancelList.forEach((func, idx) => {
+        if (typeof i !== 'number' || isNaN(i)) { // cancel all
+            func()
+        } else {
+            if (i === idx) func()
         }
-        const { url, data, options } = params
-        options.setCancel = options.setCancel ?? ((c) => {
-            cancel = c
-        });
-        return upload({ url, data, options }, { instance });
-    }
+    });
 
-    fetch.cancel = cancel;
-
-    return fetch;
-}
-
-function createPost(params, instance) {
-    let cancel = null;
-    const { url, data, options } = params;
-
-    const contentType = options.headers && options.headers['Content-Type'] || instance.defaults.headers['Content-Type'];
-    if (data && /urlencoded/.test(contentType)) {
-        data = qs.stringify(data);
-    }
-
-    const fetch = (payload, custom) => {
-        if (custom) {
-            Object.assign(params, { ...custom }, { data: payload })
-        }
-        options.setCancel = options.setCancel ?? ((c) => {
-            cancel = c
-        });
-        return post({ url, data, options }, { instance });
-    }
-
-    fetch.cancel = cancel;
-
-    return fetch;
+    return request;
 }
 
 export function createInstance(config = defaultOpts) {
     return instance || (instance = Axios.create(config))
 }
 
-export function createRequest(options = {}, { baseUrl = '', instance } = {}) {
+export function createApis(config = {}, { baseUrl = '' } = {}) {
     const apis = {}
-    const isRequestType = (method, type) => `${method}`.toUpperCase() === type;
-    instance = instance || createInstance();
 
-    for (const [key, val] of Object.entries(options)) {
+    for (let [key, val] of Object.entries(config)) {
+        val = val || {}
         const url = (!/^http/.test(val.url) && !/^ws/.test(val.url)) ? baseUrl + val.url : val.url;
         const params = {
             url,
-            options: val.options || { headers: instance.defaults.headers },
+            method: val.method,
+            options: Object.assign({ headers: defaultOpts.headers, timeout: defaultOpts.timeout }, val.options ?? {}),
         };
-        if (isRequestType(val.method, 'GET')) {
-            apis[key] = createGet(params, instance);
-            continue
-        }
-        if (isRequestType(val.method, 'POST')) {
-            apis[key] = createPost(params, instance);
-            continue
-        }
-        if (isRequestType(val.method, 'UPLOAD')) {
-            apis[key] = createUpload(params, instance);
-            continue
-        }
+
+        apis[key] = createRequest(params);
     }
 
     return apis
 }
+
+
