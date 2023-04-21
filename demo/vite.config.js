@@ -6,9 +6,13 @@ export default defineConfig({
     resolve: {
         alias: [
             {
-                find: 'easy-api',
-                replacement: resolve(__dirname, '../'),
+                find: '@',
+                replacement: resolve(__dirname, './src'),
             },
+            // {
+            //     find: '@kscommon/easy-api',
+            //     replacement: '',
+            // },
         ],
     },
     server: {

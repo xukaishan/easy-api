@@ -1,6 +1,5 @@
-// import Axios from './lib/axios';
 import Axios from 'axios';
-import qs from 'qs';
+import Qs from 'qs';
 
 /**
  * 响应format
@@ -61,7 +60,7 @@ export async function get({ url, data, options = {} }, { instance }) {
 
 export async function post({ url, data, options = {} }, { instance }) {
     if (data && /urlencoded/.test(options.headers['Content-Type'])) {
-        data = qs.stringify(data);
+        data = Qs.stringify(data);
     }
     const send = {
         timeout: options.timeout ?? instance.defaults.timeout,

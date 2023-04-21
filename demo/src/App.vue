@@ -1,5 +1,5 @@
 <script setup>
-import apis from './apis';
+import apis from '@/api/apis.js';
 let index = -1;
 
 const getInfo = () => {

@@ -1,21 +1,15 @@
 {
-  "name": "@littlekai/easy-api",
-  "version": "1.0.2",
-  "type": "module",
-  "main": "./dist/easy-api.umd.cjs",
-  "module": "./dist/easy-api.js",
-  "description": "Wrapper for Axios that allows to easily requests",
+  "name": "demo",
+  "version": "1.0.1",
+  "description": "easy-api demo",
   "scripts": {
-    "build": "vite build --config ./build/build.js"
+    "dev": "vite --open --host"
   },
-  "files": [
-    "dist"
-  ],
-  "exports": {
-    ".": {
-      "import": "./dist/easy-api.js",
-      "require": "./dist/easy-api.umd.cjs"
-    }
+  "dependencies": {
+    "@kscommon/easy-api": "^1.0.1",
+    "axios": "^1.3.6",
+    "qs": "^6.11.1",
+    "vue": "^3.2.47"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.1.0",
