@@ -1,6 +1,6 @@
 {
-  "name": "@littlekai/easy-api",
-  "version": "1.0.2",
+  "name": "@kscommon/easy-api",
+  "version": "1.0.3",
   "type": "module",
   "main": "./dist/easy-api.umd.cjs",
   "module": "./dist/easy-api.js",
@@ -35,5 +35,10 @@
   "bugs": {
     "url": "https://github.com/xukaishan/easy-api/issues"
   },
-  "homepage": "https://github.com/xukaishan/easy-api#readme"
+  "homepage": "https://github.com/xukaishan/easy-api#readme",
+  "dependencies": {
+    "@babel/core": "^7.18.10",
+    "@babel/preset-env": "^7.18.10",
+    "rollup-plugin-babel": "^4.4.0"
+  }
 }
