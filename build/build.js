@@ -18,6 +18,7 @@ export default defineConfig({
             output: {
                 globals: {
                     axios: 'axios',
+                    qs: 'Qs',
                 },
             },
             plugins: [

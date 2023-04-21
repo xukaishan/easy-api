@@ -1,4 +1,5 @@
-import Axios from './lib/axios';
+// import Axios from './lib/axios';
+import Axios from 'axios';
 import qs from 'qs';
 
 /**
@@ -19,14 +20,8 @@ import qs from 'qs';
             return response.data;
         }
     }
-
-    // 异常状态下，保持格式统一
-    return {
-        errcode: response.status,
-        errmsg: '请检查网络或稍后重试(' + response.status + ')',
-        statusText: response.statusText,
-        data: response.data,
-    };
+    // 异常状态下
+    return response
 }
 
 const defaultOpts = {
