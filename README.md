@@ -20,8 +20,12 @@ npm install easy-api
 ## Usage
 ```js
 /* api/index.js */
-import { defineConfig, instance } from 'easy-api';
+import { defineConfig, createInstance, createApis } from 'easy-api';
 
+function streamType(config) {
+    return ['blob', 'arraybuffer', 'stream'].includes(config.responseType);
+}
+/* your responseFormat function */
 function responseFormat(response, format = false) {
     if (response && (response.status === 200 || response.status === 304)) {
         if (format) {
@@ -40,17 +44,22 @@ function responseFormat(response, format = false) {
 defineConfig({
     timeout: 30000,
     headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-    responseFormat() {}, // responseFormat is used to transform the request's response 
+    responseFormat, // responseFormat is used to transform the request's response 
     // ...  your other axios config
 })
+
+export const instance = createInstance();
+
 // axios instance
 instance.interceptors.request.use(config => {}, error => {})
 instance.interceptors.response.use(response => {}, error => {})
+
+export default createApis;
 ```
 
 ```js
 /* api/apis.js */
-import { createApis } from 'easy-api';
+import createApis from 'api/index.js';
 const options = { headers: { 'Content-Type': 'application/json' } };
 
 const apis = createApis({
@@ -75,6 +84,10 @@ const apis = createApis({
         url: '/api/post/upload',
         method: 'upload',
     },
+    other: {
+        url: 'http://192.168.4.50:3000/api/post/xxx', // starts with http will miss proxy
+        method: 'post',
+    },
 })
 
 export default apis
@@ -98,4 +111,18 @@ const postList = () => {
         console.log(err);
     })
 };
+```
+### Cancel Request
+
+```js
+const cancel = apis.getInfo.cancel; //this is cancel function
+cancel && cancel(index); // The index is the order of requests to cancel the interface; if the index is not passed, it means to cancel all multiple calls of the apis.getInfo interface
+```
+
+### Cancel All Apis Request
+
+```js
+Object.keys(apis).forEach(key => {
+    apis[key].cancel()
+})
 ```

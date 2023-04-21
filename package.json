@@ -1,6 +1,6 @@
 {
-  "name": "easy-api",
-  "version": "1.0.0",
+  "name": "@kscommon/easy-api",
+  "version": "1.0.1",
   "type": "module",
   "main": "./dist/easy-api.umd.cjs",
   "module": "./dist/easy-api.js",
