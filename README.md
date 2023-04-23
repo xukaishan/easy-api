@@ -9,7 +9,7 @@ Before starting you need to install axios and qs, Because easy-api depends on ax
 ```js
 <script src="https://cdn.jsdelivr.net/npm/axios@1.3.5/dist/axios.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qs@6.11.1/dist/qs.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/easy-api@1.0.0/dist/easy-api.umd.cjs"></script>
+<script src="https://unpkg.com/@littlekai/easy-api@1.0.5/dist/easy-api.iife.js"></script>
 ```
 ### Npm
 ```console
