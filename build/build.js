@@ -1,7 +1,7 @@
-// vite.config.js
 import { resolve } from 'path'
 import { defineConfig } from 'vite'
 import { terser } from 'rollup-plugin-terser';
+import babel from 'rollup-plugin-babel';
 
 export default defineConfig({
     build: {
@@ -22,6 +22,9 @@ export default defineConfig({
                 },
             },
             plugins: [
+                babel({
+                    exclude: '**/node_modules/**',
+                }),
                 terser({
                     ecma: 5,
                 }),

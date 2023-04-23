@@ -1,5 +1,5 @@
 <script setup>
-import apis from './apis';
+import apis from '@/api/apis.js';
 let index = -1;
 
 const getInfo = () => {
@@ -40,9 +40,18 @@ const saveForm = () => {
             console.log('err=>', err);
         });
 };
+
+let file = null
+const fileChange = ev => {
+    file = ev.target.files[0];
+}
 const postUpload = () => {
-    apis.upload().then((res) => {
+    const formdata = new FormData()
+    formdata.append('file', file)
+    formdata.append('name', file.name)
+    apis.upload(formdata).then((res) => {
         console.log('res=>', res);
+        window.open(res.data.url)
     });
 };
 
@@ -61,7 +70,8 @@ const abortRequestAllGetInfo = () => {
         <button @click="postList">postList</button>
         <button @click="postSave">postSave</button>
         <button @click="saveForm">saveForm</button>
-        <button @click="postUpload">postUpload</button>
+        <input type="file" name="file" @change="fileChange">
+        <button @click="postUpload">Upload</button>
     </div>
     <div class="item">
         <button @click="abortRequestGetInfo">abortRequest getInfo</button>

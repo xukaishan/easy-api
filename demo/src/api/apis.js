@@ -1,4 +1,4 @@
-import { createApis } from 'easy-api';
+import createApis from './index';
 const options = { headers: { 'Content-Type': 'application/json' } };
 
 const apis = createApis({

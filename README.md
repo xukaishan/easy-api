@@ -21,6 +21,7 @@ npm install easy-api
 ```js
 /* api/index.js */
 import { defineConfig, createInstance, createApis } from 'easy-api';
+// const { defineConfig, createInstance, createApis } = window.easyapi // usage by cdn
 
 function streamType(config) {
     return ['blob', 'arraybuffer', 'stream'].includes(config.responseType);
@@ -125,4 +126,18 @@ cancel && cancel(index); // The index is the order of requests to cancel the int
 Object.keys(apis).forEach(key => {
     apis[key].cancel()
 })
+```
+
+## Demo
+
+```console
+cd server
+npm i
+npm run start
+```
+
+```console
+cd demo
+npm i
+npm run dev
 ```

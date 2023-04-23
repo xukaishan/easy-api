@@ -1,6 +1,5 @@
-// import Axios from './lib/axios';
 import Axios from 'axios';
-import qs from 'qs';
+import Qs from 'qs';
 
 /**
  * 响应format
@@ -61,7 +60,7 @@ export async function get({ url, data, options = {} }, { instance }) {
 
 export async function post({ url, data, options = {} }, { instance }) {
     if (data && /urlencoded/.test(options.headers['Content-Type'])) {
-        data = qs.stringify(data);
+        data = Qs.stringify(data);
     }
     const send = {
         timeout: options.timeout ?? instance.defaults.timeout,
@@ -101,6 +100,24 @@ export async function upload({ url, data, options = {} }, { instance }) {
     );
 }
 
+export async function commonFetch({ url, method, params = null, data = null, options = {} }, { instance }) {
+    const send = {
+        timeout: options.timeout ?? instance.defaults.timeout,
+        method,
+        url,
+        params,
+        data,
+        headers: options.headers ?? instance.defaults.headers,
+        signal: options.signal,
+        responseType: options.responseType || 'json',
+    };
+    return instance(send).then(
+        (response) => {
+            return defaultOpts.responseFormat(response, true);
+        },
+    );
+}
+
 const methodMap = {
     'get': get,
     'post': post,
@@ -125,7 +142,9 @@ export function createRequest(params) {
 
         cancelList.push(() => controller.abort())
 
-        return methodMap[`${params.method}`.toLowerCase()]({ url: params.url, data: params.data, options: params.options }, { instance });
+        const method = methodMap[`${params.method}`.toLowerCase()] ?? commonFetch
+
+        return method({ url: params.url, data: params.data, options: params.options }, { instance });
     }
     request.cancel = (i) => cancelList.forEach((func, idx) => {
         if (typeof i !== 'number' || isNaN(i)) { // cancel all

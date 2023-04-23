@@ -1,5 +1,5 @@
+const fs =  require('fs')
 const Router = require('koa-router')
-
 const router = new Router();
 
 const baseUrl = "/api";
@@ -42,8 +42,28 @@ router.post(`${baseUrlPost}/saveForm`, async (ctx) => {
 });
 
 router.post(`${baseUrlPost}/upload`, (ctx) => {
+    const file = ctx.request.files.file;
+    const name = ctx.request.body.name;
+    const reader = fs.createReadStream(file.path);
+    let filePath = __dirname + "../../../static/upload/";
+    let fileResource = filePath + `/${name}`;
+
+    if (!fs.existsSync(filePath)) {
+        fs.mkdir(filePath, (err) => {
+            if (err) {
+                throw new Error(err)
+            } else {
+                const upstream = fs.createWriteStream(fileResource);
+                reader.pipe(upstream)
+            }
+        })
+    } else {
+        const upstream = fs.createWriteStream(fileResource);
+        reader.pipe(upstream)
+    }
+
     ctx.body = {
-        data: { message: "success", status: 0, },
+        data: { message: "upload success", status: 0, url: `http://localhost:3000/static/upload/${name}` },
     };
 });
 
